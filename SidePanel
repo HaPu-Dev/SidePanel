@@ -28,7 +28,6 @@ local sidebarCorner = Instance.new("UICorner")
 sidebarCorner.CornerRadius = UDim.new(0, 15)
 sidebarCorner.Parent = sidebar
 
--- Add glow effect to sidebar
 local sidebarGlow = Instance.new("UIStroke")
 sidebarGlow.Color = Color3.fromRGB(128, 0, 255)
 sidebarGlow.Thickness = 2
@@ -58,14 +57,12 @@ local panelCorner = Instance.new("UICorner")
 panelCorner.CornerRadius = UDim.new(0, 15)
 panelCorner.Parent = mainPanel
 
--- Add gradient border to main panel
 local panelStroke = Instance.new("UIStroke")
 panelStroke.Color = Color3.fromRGB(128, 0, 255)
 panelStroke.Thickness = 1.5
 panelStroke.Transparency = 0.5
 panelStroke.Parent = mainPanel
 
--- Add shadow effect
 local panelShadow = Instance.new("UIShadow")
 panelShadow.Parent = mainPanel
 
@@ -86,7 +83,6 @@ local searchCorner = Instance.new("UICorner")
 searchCorner.CornerRadius = UDim.new(0, 8)
 searchCorner.Parent = searchBox
 
--- Add purple outline to search box
 local searchStroke = Instance.new("UIStroke")
 searchStroke.Color = Color3.fromRGB(128, 0, 255)
 searchStroke.Thickness = 1
@@ -139,11 +135,11 @@ local locations = {
     {"Depths", 946,-711,1243},
     {"Desolate Deep", -1511,-238,-2853},
     {"Ethereal Trial", -3807,-567,1840},
-    {"Everturn Forest", 2481, 137.33, -2527}, -- Added new location
+    {"Everturn Forest", 2481,137.33,-2527},
     {"Forgotten Temple", -5229,-1760,-10001},
     {"Forsaken", -2590,147,1600},
     {"Forsaken Veil", -2344,-11183,7081},
-    {"Frigid Cavern", 19802,424,5338},
+    {"Frigid Cavern", 19893.61, 433.69, 5604.84}, -- ✅ UPDATED
     {"Glacial Grotto", 19953,1137,5382},
     {"Grand Reef", -3575,151,526},
     {"Hall Of Whispers", 4343,-2235,-4679},
@@ -207,7 +203,6 @@ local function createButton(name, x, y, z)
     corner.CornerRadius = UDim.new(0, 8)
     corner.Parent = btn
     
-    -- Add purple gradient outline (circular gradient effect)
     local btnStroke = Instance.new("UIStroke")
     btnStroke.Thickness = 1.2
     btnStroke.Transparency = 0.4
@@ -215,7 +210,6 @@ local function createButton(name, x, y, z)
     btnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     btnStroke.Parent = btn
     
-    -- Hover effect with color transition
     btn.MouseEnter:Connect(function()
         btn.BackgroundColor3 = Color3.fromRGB(45, 35, 55)
         btnStroke.Transparency = 0.2
@@ -230,12 +224,6 @@ local function createButton(name, x, y, z)
     
     btn.MouseButton1Click:Connect(function()
         teleportTo(x, y, z)
-        -- Visual feedback on click
-        btn.BackgroundColor3 = Color3.fromRGB(85, 55, 105)
-        wait(0.1)
-        btn.BackgroundColor3 = Color3.fromRGB(45, 35, 55)
-        wait(0.05)
-        btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     end)
     
     return btn
@@ -249,64 +237,21 @@ for _, loc in ipairs(locations) do
     table.insert(buttons, {button = btn, name = loc[1]:lower()})
 end
 
--- Update canvas size
 layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y)
 end)
 
--- ================= SEARCH FUNCTION =================
+-- ================= SEARCH =================
 searchBox:GetPropertyChangedSignal("Text"):Connect(function()
     local text = searchBox.Text:lower()
-    
     for _, data in ipairs(buttons) do
-        if text == "" or string.find(data.name, text) then
-            data.button.Visible = true
-        else
-            data.button.Visible = false
-        end
+        data.button.Visible = (text == "" or string.find(data.name, text))
     end
 end)
 
 -- ================= TOGGLE =================
 local open = false
-
 toggleButton.MouseButton1Click:Connect(function()
     open = not open
     mainPanel.Visible = open
-end)
-
--- ================= ADDITIONAL VISUAL EFFECTS =================
--- Create a subtle background glow for the main panel
-local glowFrame = Instance.new("Frame")
-glowFrame.Size = mainPanel.Size + UDim2.new(0, 10, 0, 10)
-glowFrame.Position = mainPanel.Position - UDim2.new(0, 5, 0, 5)
-glowFrame.BackgroundColor3 = Color3.fromRGB(128, 0, 255)
-glowFrame.BackgroundTransparency = 0.9
-glowFrame.BorderSizePixel = 0
-glowFrame.Visible = false
-glowFrame.Parent = screenGui
-
-local glowCorner = Instance.new("UICorner")
-glowCorner.CornerRadius = UDim.new(0, 20)
-glowCorner.Parent = glowFrame
-
--- Sync glow visibility and position with main panel
-mainPanel:GetPropertyChangedSignal("Visible"):Connect(function()
-    glowFrame.Visible = mainPanel.Visible
-    if mainPanel.Visible then
-        glowFrame.Size = mainPanel.Size + UDim2.new(0, 10, 0, 10)
-        glowFrame.Position = mainPanel.Position - UDim2.new(0, 5, 0, 5)
-    end
-end)
-
-mainPanel:GetPropertyChangedSignal("Position"):Connect(function()
-    if mainPanel.Visible then
-        glowFrame.Position = mainPanel.Position - UDim2.new(0, 5, 0, 5)
-    end
-end)
-
-mainPanel:GetPropertyChangedSignal("Size"):Connect(function()
-    if mainPanel.Visible then
-        glowFrame.Size = mainPanel.Size + UDim2.new(0, 10, 0, 10)
-    end
 end)
