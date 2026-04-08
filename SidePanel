@@ -45,7 +45,7 @@ toggleButton.Parent = sidebar
 
 -- ================= MAIN PANEL =================
 local mainPanel = Instance.new("Frame")
-mainPanel.Size = UDim2.new(0, 180, 0, 260)
+mainPanel.Size = UDim2.new(0, 180, 0, 320)
 mainPanel.Position = UDim2.new(0, 45, 0.3, 0)
 mainPanel.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 mainPanel.BackgroundTransparency = 0.05
@@ -66,33 +66,45 @@ panelStroke.Parent = mainPanel
 local panelShadow = Instance.new("UIShadow")
 panelShadow.Parent = mainPanel
 
--- ================= SEARCH BAR =================
-local searchBox = Instance.new("TextBox")
-searchBox.Size = UDim2.new(1, -10, 0, 28)
-searchBox.Position = UDim2.new(0, 5, 0, 5)
-searchBox.PlaceholderText = "🔍 Search location..."
-searchBox.Text = ""
-searchBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-searchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-searchBox.TextSize = 11
-searchBox.ClearTextOnFocus = false
-searchBox.Font = Enum.Font.Gotham
-searchBox.Parent = mainPanel
+-- ================= COORDINATE TELEPORTER =================
+local coordBox = Instance.new("TextBox")
+coordBox.Size = UDim2.new(1, -10, 0, 32)
+coordBox.Position = UDim2.new(0, 5, 0, 5)
+coordBox.PlaceholderText = "📍 Enter coordinates: X, Y, Z (auto-teleports)"
+coordBox.Text = ""
+coordBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+coordBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+coordBox.TextSize = 11
+coordBox.ClearTextOnFocus = true
+coordBox.Font = Enum.Font.Gotham
+coordBox.Parent = mainPanel
 
-local searchCorner = Instance.new("UICorner")
-searchCorner.CornerRadius = UDim.new(0, 8)
-searchCorner.Parent = searchBox
+local coordCorner = Instance.new("UICorner")
+coordCorner.CornerRadius = UDim.new(0, 8)
+coordCorner.Parent = coordBox
 
-local searchStroke = Instance.new("UIStroke")
-searchStroke.Color = Color3.fromRGB(128, 0, 255)
-searchStroke.Thickness = 1
-searchStroke.Transparency = 0.6
-searchStroke.Parent = searchBox
+local coordStroke = Instance.new("UIStroke")
+coordStroke.Color = Color3.fromRGB(128, 0, 255)
+coordStroke.Thickness = 1
+coordStroke.Transparency = 0.6
+coordStroke.Parent = coordBox
+
+-- Status label for feedback
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, -10, 0, 18)
+statusLabel.Position = UDim2.new(0, 5, 0, 42)
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+statusLabel.TextSize = 10
+statusLabel.Text = ""
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+statusLabel.Parent = mainPanel
 
 -- ================= SCROLL LIST =================
 local scroll = Instance.new("ScrollingFrame")
-scroll.Size = UDim2.new(1, -10, 1, -45)
-scroll.Position = UDim2.new(0, 5, 0, 38)
+scroll.Size = UDim2.new(1, -10, 1, -85)
+scroll.Position = UDim2.new(0, 5, 0, 65)
 scroll.BackgroundTransparency = 1
 scroll.BorderSizePixel = 0
 scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -139,7 +151,7 @@ local locations = {
     {"Forgotten Temple", -5229,-1760,-10001},
     {"Forsaken", -2590,147,1600},
     {"Forsaken Veil", -2344,-11183,7081},
-    {"Frigid Cavern", 19893.61, 433.69, 5604.84}, -- ✅ UPDATED
+    {"Frigid Cavern", 19893.61, 433.69, 5604.84},
     {"Glacial Grotto", 19953,1137,5382},
     {"Grand Reef", -3575,151,526},
     {"Hall Of Whispers", 4343,-2235,-4679},
@@ -181,12 +193,98 @@ local locations = {
 }
 
 -- ================= TELEPORT FUNCTION =================
-local function teleportTo(x, y, z)
+local lastTeleport = ""
+local teleportCooldown = false
+
+local function teleportTo(x, y, z, showMessage)
     local char = player.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+        if showMessage ~= false then
+            statusLabel.Text = string.format("✓ Teleported to (%.1f, %.1f, %.1f)", x, y, z)
+            statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+            task.wait(2)
+            if statusLabel.Text:match("✓") then
+                statusLabel.Text = ""
+            end
+        end
+    else
+        statusLabel.Text = "❌ Character not found!"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+        task.wait(2)
+        statusLabel.Text = ""
     end
 end
+
+-- ================= PARSE COORDINATES =================
+local function parseCoordinates(input)
+    -- Remove spaces and split by commas
+    local cleaned = input:gsub("%s+", "")
+    local parts = {}
+    for part in cleaned:gmatch("([^,]+)") do
+        table.insert(parts, tonumber(part))
+    end
+    
+    if #parts == 3 then
+        local x, y, z = parts[1], parts[2], parts[3]
+        if x and y and z then
+            return x, y, z
+        end
+    end
+    return nil, nil, nil
+end
+
+-- Auto-teleport when text changes
+local debounce = false
+coordBox:GetPropertyChangedSignal("Text"):Connect(function()
+    local input = coordBox.Text
+    if input == "" or debounce then
+        return
+    end
+    
+    debounce = true
+    task.wait(0.1) -- Small delay to prevent spam
+    debounce = false
+    
+    -- Only auto-teleport if we have new input
+    if input ~= "" then
+        local x, y, z = parseCoordinates(input)
+        if x and y and z then
+            -- Check if it's different from last teleport to avoid duplicate teleports
+            local coordString = string.format("%.1f,%.1f,%.1f", x, y, z)
+            if coordString ~= lastTeleport then
+                lastTeleport = coordString
+                teleportTo(x, y, z, true)
+                -- Optional: Clear the textbox after teleport (uncomment if desired)
+                -- coordBox.Text = ""
+            end
+        end
+    end
+end)
+
+-- Also support Enter key for manual trigger
+coordBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        local input = coordBox.Text
+        if input ~= "" then
+            local x, y, z = parseCoordinates(input)
+            if x and y and z then
+                local coordString = string.format("%.1f,%.1f,%.1f", x, y, z)
+                if coordString ~= lastTeleport then
+                    lastTeleport = coordString
+                    teleportTo(x, y, z, true)
+                    -- Optional: Clear the textbox after teleport (uncomment if desired)
+                    -- coordBox.Text = ""
+                end
+            else
+                statusLabel.Text = "❌ Invalid format! Use: X, Y, Z"
+                statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+                task.wait(2)
+                statusLabel.Text = ""
+            end
+        end
+    end
+end)
 
 -- ================= CREATE BUTTON =================
 local function createButton(name, x, y, z)
@@ -198,55 +296,45 @@ local function createButton(name, x, y, z)
     btn.Text = name
     btn.Font = Enum.Font.Gotham
     btn.Parent = scroll
+
+    local corner = Instance.new("UICorner")  
+    corner.CornerRadius = UDim.new(0, 8)  
+    corner.Parent = btn  
     
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 8)
-    corner.Parent = btn
+    local btnStroke = Instance.new("UIStroke")  
+    btnStroke.Thickness = 1.2  
+    btnStroke.Transparency = 0.4  
+    btnStroke.Color = Color3.fromRGB(128, 0, 255)  
+    btnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border  
+    btnStroke.Parent = btn  
     
-    local btnStroke = Instance.new("UIStroke")
-    btnStroke.Thickness = 1.2
-    btnStroke.Transparency = 0.4
-    btnStroke.Color = Color3.fromRGB(128, 0, 255)
-    btnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    btnStroke.Parent = btn
+    btn.MouseEnter:Connect(function()  
+        btn.BackgroundColor3 = Color3.fromRGB(45, 35, 55)  
+        btnStroke.Transparency = 0.2  
+        btnStroke.Thickness = 1.5  
+    end)  
     
-    btn.MouseEnter:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(45, 35, 55)
-        btnStroke.Transparency = 0.2
-        btnStroke.Thickness = 1.5
-    end)
+    btn.MouseLeave:Connect(function()  
+        btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)  
+        btnStroke.Transparency = 0.4  
+        btnStroke.Thickness = 1.2  
+    end)  
     
-    btn.MouseLeave:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-        btnStroke.Transparency = 0.4
-        btnStroke.Thickness = 1.2
-    end)
-    
-    btn.MouseButton1Click:Connect(function()
-        teleportTo(x, y, z)
-    end)
+    btn.MouseButton1Click:Connect(function()  
+        lastTeleport = "" -- Reset last teleport for manual clicks
+        teleportTo(x, y, z, true)  
+    end)  
     
     return btn
 end
 
 -- ================= LOAD LIST =================
-local buttons = {}
-
 for _, loc in ipairs(locations) do
-    local btn = createButton(loc[1], loc[2], loc[3], loc[4])
-    table.insert(buttons, {button = btn, name = loc[1]:lower()})
+    createButton(loc[1], loc[2], loc[3], loc[4])
 end
 
 layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y)
-end)
-
--- ================= SEARCH =================
-searchBox:GetPropertyChangedSignal("Text"):Connect(function()
-    local text = searchBox.Text:lower()
-    for _, data in ipairs(buttons) do
-        data.button.Visible = (text == "" or string.find(data.name, text))
-    end
 end)
 
 -- ================= TOGGLE =================
