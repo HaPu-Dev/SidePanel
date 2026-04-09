@@ -191,6 +191,200 @@ end
 -- ================= CREATE BUTTON =================
 local function createButton(name, x, y, z)
     local btn = Instance.new("TextButton")
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+-- ✅ Block execution outside the target game
+local allowedPlaceId = 16732694052 -- Fisch
+
+if game.PlaceId ~= allowedPlaceId then
+    return
+end
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "SidebarUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- ================= SIDEBAR =================
+local sidebar = Instance.new("Frame")
+sidebar.Size = UDim2.new(0, 18, 0, 110)
+sidebar.Position = UDim2.new(0, 10, 0.4, 0)
+sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+sidebar.BackgroundTransparency = 0.05
+sidebar.BorderSizePixel = 0
+sidebar.Active = true
+sidebar.Draggable = true
+sidebar.Parent = screenGui
+
+local sidebarCorner = Instance.new("UICorner")
+sidebarCorner.CornerRadius = UDim.new(0, 15)
+sidebarCorner.Parent = sidebar
+
+local sidebarGlow = Instance.new("UIStroke")
+sidebarGlow.Color = Color3.fromRGB(128, 0, 255)
+sidebarGlow.Thickness = 2
+sidebarGlow.Transparency = 0.7
+sidebarGlow.Parent = sidebar
+
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(1, 0, 1, 0)
+toggleButton.BackgroundTransparency = 1
+toggleButton.Text = "≡"
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.TextSize = 18
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.Parent = sidebar
+
+-- ================= MAIN PANEL =================
+local mainPanel = Instance.new("Frame")
+mainPanel.Size = UDim2.new(0, 180, 0, 260)
+mainPanel.Position = UDim2.new(0, 45, 0.3, 0)
+mainPanel.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+mainPanel.BackgroundTransparency = 0.05
+mainPanel.BorderSizePixel = 0
+mainPanel.Visible = false
+mainPanel.Parent = screenGui
+
+local panelCorner = Instance.new("UICorner")
+panelCorner.CornerRadius = UDim.new(0, 15)
+panelCorner.Parent = mainPanel
+
+local panelStroke = Instance.new("UIStroke")
+panelStroke.Color = Color3.fromRGB(128, 0, 255)
+panelStroke.Thickness = 1.5
+panelStroke.Transparency = 0.5
+panelStroke.Parent = mainPanel
+
+local panelShadow = Instance.new("UIShadow")
+panelShadow.Parent = mainPanel
+
+-- ================= TEXTBOX =================
+local searchBox = Instance.new("TextBox")
+searchBox.Size = UDim2.new(1, -10, 0, 28)
+searchBox.Position = UDim2.new(0, 5, 0, 5)
+searchBox.PlaceholderText = "Search OR coords: x, y, z"
+searchBox.Text = ""
+searchBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+searchBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+searchBox.TextSize = 11
+searchBox.ClearTextOnFocus = false
+searchBox.Font = Enum.Font.Gotham
+searchBox.Parent = mainPanel
+
+local searchCorner = Instance.new("UICorner")
+searchCorner.CornerRadius = UDim.new(0, 8)
+searchCorner.Parent = searchBox
+
+local searchStroke = Instance.new("UIStroke")
+searchStroke.Color = Color3.fromRGB(128, 0, 255)
+searchStroke.Thickness = 1
+searchStroke.Transparency = 0.6
+searchStroke.Parent = searchBox
+
+-- ================= SCROLL LIST =================
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1, -10, 1, -45)
+scroll.Position = UDim2.new(0, 5, 0, 38)
+scroll.BackgroundTransparency = 1
+scroll.BorderSizePixel = 0
+scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+scroll.ScrollBarThickness = 3
+scroll.ScrollBarImageColor3 = Color3.fromRGB(128, 0, 255)
+scroll.Parent = mainPanel
+
+local layout = Instance.new("UIListLayout")
+layout.Padding = UDim.new(0, 4)
+layout.Parent = scroll
+
+-- ================= LOCATIONS DATA =================
+local locations = {
+    {"Above The Clouds", 1496,2601,-1716},
+    {"Abyssal Zenith", -13506,-11050,144},
+    {"Altar", 1308,-802,-92},
+    {"Ancient Archives", -3160,-748,1691},
+    {"Ancient Isles", 6072,195,289},
+    {"Arch", 999,127,-1237},
+    {"Atlantean Storm", -3874,155,419},
+    {"Atlantis", -4269,-603,1805},
+    {"Birch", 1742,138,-2502},
+    {"Blue Moon", 2743,131,2516},
+    {"Boreal Pines", 21881,137,4165},
+    {"Boreal Pines Cave", 21769,136,4026},
+    {"Boreal Pines Peak", 21299,253,3857},
+    {"Brine Pool", -1794,-146,-3303},
+    {"Calm Zone", -4367,-11175,3710},
+    {"Carrot Garden", 3726,-1128,-1094},
+    {"Castaway Cliffs", 672,161,-1789},
+    {"Challenger's Deep", -785,-3283,-666},
+    {"Collapsed Ruin", 3136,-1102,1595},
+    {"Coral Bastion", 2555,-1098,854},
+    {"Crimson Cavern", -1007,-341,-4884},
+    {"Crowned Ruin", 3146,-1127,2050},
+    {"Cryogenic Canal", 20112,509,5431},
+    {"Crystal Cove", 1365,-614,2454},
+    {"Cultist Lair", 4321,-2016,-4677},
+    {"Deep Shop", -979,-248,-2700},
+    {"Depths", 946,-711,1243},
+    {"Desolate Deep", -1511,-238,-2853},
+    {"Ethereal Trial", -3807,-567,1840},
+    {"Everturn Forest", 2481,137.33,-2527},
+    {"Forgotten Temple", -5229,-1760,-10001},
+    {"Forsaken", -2590,147,1600},
+    {"Forsaken Veil", -2344,-11183,7081},
+    {"Frigid Cavern", 19893.61, 433.69, 5604.84},
+    {"Grotto Bestiary", 20039.89, 883.19, 5642.12},
+    {"Glacial Grotto", 19953,1137,5382},
+    {"Grand Reef", -3575,151,526},
+    {"Hall Of Whispers", 4343,-2235,-4679},
+    {"Inner Tidefall Castle", 4395,-1101,919},
+    {"Kraken Pool", -4378,-996,2054},
+    {"Living Garden", -2488,-317,-2867},
+    {"Lost Jungle", -2713,150,-2059},
+    {"Luminescent Cavern", -1016,-337,-4071},
+    {"Mineshaft", -673,-865,-168},
+    {"Moosewood", 383,134,244},
+    {"Mossjaw", -5065,-1760,-10163},
+    {"Mushgrove", 2501,128,-721},
+    {"Nectar Den", -2034,-302,-3237},
+    {"Overgrowth Caves", 20314,272,5464},
+    {"Passage Of Oaths", 4264,-2483,-4695},
+    {"Rock", -3648,212,1910},
+    {"Roslit", -1477,130,672},
+    {"Scoria Lava Lake", -5585,168,-1793},
+    {"Scoria Lava Volcano", -5489,190,-1558},
+    {"Scoria Mines", -4748,-700,-2014},
+    {"Scoria Reach", -5152,138,-1436},
+    {"Snowcap", 2649,139,2521},
+    {"Spike", -1255,134,1554},
+    {"Statue", 73,139,-1028},
+    {"Sunken Reliquary", 2949,-1102,-104},
+    {"Sunstone", -933,128,-1119},
+    {"Swamp", 2501,128,-721},
+    {"Terrapin", -202,142,1953},
+    {"The Sanctum", 4451,-2688,-4671},
+    {"Tidefall", 3121,-1101,782},
+    {"Tidefall Castle", 3899,-1097,907},
+    {"Toxic Grove", -2751,-317,-2273},
+    {"Treasure Island", 8301,192,-17198},
+    {"Trident", -1479,-229,-2391},
+    {"Underground Music Venue", 2043,-644,2472},
+    {"Vertigo", -112,-493,1040},
+    {"Volcano", -1889,164,329},
+    {"Volcanic Vents", -3418,-2260,3856}
+}
+
+-- ================= TELEPORT FUNCTION =================
+local function teleportTo(x, y, z)
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+    end
+end
+
+-- ================= CREATE BUTTON =================
+local function createButton(name, x, y, z)
+    local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -5, 0, 28)
     btn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     btn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -252,7 +446,7 @@ searchBox.FocusLost:Connect(function(enterPressed)
         end
     end
 
-    -- fallback = search (original behavior)
+    -- original search behavior
     for _, data in ipairs(buttons) do
         data.button.Visible = (text == "" or string.find(data.name, text))
     end
