@@ -1,8 +1,7 @@
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
--- ✅ Block execution outside the target game
-local allowedPlaceId = 16732694052 -- Fisch
+local allowedPlaceId = 16732694052
 
 if game.PlaceId ~= allowedPlaceId then
     return
@@ -13,7 +12,6 @@ screenGui.Name = "SidebarUI"
 screenGui.ResetOnSpawn = false
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- ================= SIDEBAR =================
 local sidebar = Instance.new("Frame")
 sidebar.Size = UDim2.new(0, 18, 0, 110)
 sidebar.Position = UDim2.new(0, 10, 0.4, 0)
@@ -43,7 +41,6 @@ toggleButton.TextSize = 18
 toggleButton.Font = Enum.Font.GothamBold
 toggleButton.Parent = sidebar
 
--- ================= MAIN PANEL =================
 local mainPanel = Instance.new("Frame")
 mainPanel.Size = UDim2.new(0, 180, 0, 260)
 mainPanel.Position = UDim2.new(0, 45, 0.3, 0)
@@ -66,7 +63,6 @@ panelStroke.Parent = mainPanel
 local panelShadow = Instance.new("UIShadow")
 panelShadow.Parent = mainPanel
 
--- ================= TEXTBOX =================
 local searchBox = Instance.new("TextBox")
 searchBox.Size = UDim2.new(1, -10, 0, 28)
 searchBox.Position = UDim2.new(0, 5, 0, 5)
@@ -89,7 +85,6 @@ searchStroke.Thickness = 1
 searchStroke.Transparency = 0.6
 searchStroke.Parent = searchBox
 
--- ================= SCROLL LIST =================
 local scroll = Instance.new("ScrollingFrame")
 scroll.Size = UDim2.new(1, -10, 1, -45)
 scroll.Position = UDim2.new(0, 5, 0, 38)
@@ -104,16 +99,17 @@ local layout = Instance.new("UIListLayout")
 layout.Padding = UDim.new(0, 4)
 layout.Parent = scroll
 
--- ================= LOCATIONS DATA =================
 local locations = {
     {"Above The Clouds", 1496,2601,-1716},
     {"Abyssal Zenith", -13506,-11050,144},
     {"Altar", 1308,-802,-92},
     {"Ancient Archives", -3160,-748,1691},
     {"Ancient Isles", 6072,195,289},
+    {"Apollo", -8759.29, -2904.53, 627.15},
     {"Arch", 999,127,-1237},
     {"Atlantean Storm", -3874,155,419},
     {"Atlantis", -4269,-603,1805},
+    {"Bellona", -8794.07, -2361.67, 846.77},
     {"Birch", 1742,138,-2502},
     {"Blue Moon", 2743,131,2516},
     {"Boreal Pines", 21881,137,4165},
@@ -140,9 +136,10 @@ local locations = {
     {"Forsaken", -2590,147,1600},
     {"Forsaken Veil", -2344,-11183,7081},
     {"Frigid Cavern", 19893.61, 433.69, 5604.84},
-    {"Grotto Bestiary", 20039.89, 883.19, 5642.12},
     {"Glacial Grotto", 19953,1137,5382},
     {"Grand Reef", -3575,151,526},
+    {"Grotto Bestiary", 20039.89, 883.19, 5642.12},
+    {"Hades", -8751.37, -4235.27, 460.42},
     {"Hall Of Whispers", 4343,-2235,-4679},
     {"Inner Tidefall Castle", 4395,-1101,919},
     {"Kraken Pool", -4378,-996,2054},
@@ -154,8 +151,10 @@ local locations = {
     {"Mossjaw", -5065,-1760,-10163},
     {"Mushgrove", 2501,128,-721},
     {"Nectar Den", -2034,-302,-3237},
+    {"Olympian", -8819.54, -4243.17, -258.24},
     {"Overgrowth Caves", 20314,272,5464},
     {"Passage Of Oaths", 4264,-2483,-4695},
+    {"Poseidon", -8820.21, -3188.49, 808.27},
     {"Rock", -3648,212,1910},
     {"Roslit", -1477,130,672},
     {"Scoria Lava Lake", -5585,168,-1793},
@@ -177,11 +176,11 @@ local locations = {
     {"Trident", -1479,-229,-2391},
     {"Underground Music Venue", 2043,-644,2472},
     {"Vertigo", -112,-493,1040},
+    {"Volcanic Vents", -3418,-2260,3856},
     {"Volcano", -1889,164,329},
-    {"Volcanic Vents", -3418,-2260,3856}
+    {"Zeus", -8781.28, -3528.94, 762.77}
 }
 
--- ================= TELEPORT FUNCTION =================
 local function teleportTo(x, y, z)
     local char = player.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
@@ -189,7 +188,6 @@ local function teleportTo(x, y, z)
     end
 end
 
--- ================= CREATE BUTTON =================
 local function createButton(name, x, y, z)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -5, 0, 28)
@@ -218,7 +216,6 @@ local function createButton(name, x, y, z)
     return btn
 end
 
--- ================= LOAD LIST =================
 local buttons = {}
 
 for _, loc in ipairs(locations) do
@@ -230,7 +227,6 @@ layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y)
 end)
 
--- ================= TEXTBOX LOGIC =================
 local function parseCoordinates(text)
     local nums = {}
     for num in string.gmatch(text, "-?%d+%.?%d*") do
@@ -253,13 +249,11 @@ searchBox.FocusLost:Connect(function(enterPressed)
         end
     end
 
-    -- original search behavior
     for _, data in ipairs(buttons) do
         data.button.Visible = (text == "" or string.find(data.name, text))
     end
 end)
 
--- ================= TOGGLE =================
 local open = false
 toggleButton.MouseButton1Click:Connect(function()
     open = not open
